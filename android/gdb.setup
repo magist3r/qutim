@@ -1,0 +1,4 @@
+file ./app_process
+target remote :5039
+set solib-search-path /home/magist3r/code/qutim-android
+directory /home/magist3r/code/android-toolchain2/ /home/magist3r/code/qutim-android/include/

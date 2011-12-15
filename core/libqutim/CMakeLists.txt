@@ -211,4 +211,3 @@ if( DOXYGEN_FOUND AND QUTIM_GENERATE_DOCS )
 
     add_dependencies(libqutim ${DOC_TARGET})
 endif()
-

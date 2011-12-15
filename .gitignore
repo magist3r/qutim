@@ -5,7 +5,7 @@ CMakeLists.txt.user
 qtcreator-build
 *.user
 build
-android
 libs
 debian_harmattan/qutim
 debian_harmattan/qutim-dbg
+android/bin

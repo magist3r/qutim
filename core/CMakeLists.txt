@@ -211,7 +211,19 @@ QUTIM_ADD_OPTION(QUTIM_SINGLE_PROFILE
 	ON
 )
 
-QUTIM_ADD_EXECUTABLE(qutim
+IF(ANDROID)
+   ADD_LIBRARY (qutim SHARED
+        ${SOURCES}
+        ${HEADERS}
+        ${MOC_SRCS}
+        ${UIS_H}
+        ${RCC}
+        ${QUTIM_ADDITIONAL_SOURCES}
+	/home/magist3r/code/qt-android/src/android/cpp/qtmain_android.cpp
+    )
+    set_target_properties(libqutim PROPERTIES OUTPUT_NAME libqutimcore)
+ELSE()
+  QUTIM_ADD_EXECUTABLE (qutim
 	WIN32 MACOSX_BUNDLE
 	${SOURCES}
 	${HEADERS}
@@ -220,6 +232,8 @@ QUTIM_ADD_EXECUTABLE(qutim
 	${RCC}
 	${QUTIM_ADDITIONAL_SOURCES}
 	)
+ENDIF()
+
 
 if(MSVC)
 	set(QUTIM_COMPILE_FLAGS "${QUTIM_COMPILE_FLAGS} /W3")
@@ -364,6 +378,7 @@ INSTALL(TARGETS qutim
 		COMPONENT Core
 	BUNDLE DESTINATION .
 		COMPONENT Core
+	LIBRARY DESTINATION libs
 )
 set(QUTIM_SHARE_PATHS share/applications)
 IF(QUTIM_INSTALL_ICONS)
