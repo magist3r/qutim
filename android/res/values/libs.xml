@@ -2,39 +2,6 @@
 <resources>
     <array name="bundled_libs">
 	<item>qutimcore</item>
-	<item>qrcicons</item>
-	<item>accountcreator</item>
-	<item>adiumsrvicons</item>
-	<item>antispam</item>
-	<item>authdialog</item>
-	<item>bearermanager</item>
-	<item>birthdayreminder</item>
-	<item>chatnotificationsbackend</item>
-	<item>emoedit</item>
-	<item>jsonconfig</item>
-	<item>jsonhistory</item>
-	<item>kopeteemoticonsbackend</item>
-	<item>localization</item>
-	<item>mobileaboutdialog</item>
-	<item>mobilecontactinfo</item>
-	<item>mobilenotificationssettings</item>
-	<item>mobilesettingsdialog</item>
-	<item>mrim</item>
-	<item>nocryptoservice</item>
-	<item>notificationfilter</item>
-	<item>notificationssettings</item>
-	<item>oscar</item>
-	<item>oscaridentify</item>
-	<item>oscarxstatus</item>
-	<item>password</item>
-	<item>proxysettings</item>
-	<item>sessionhelper</item>
-	<item>shortcutsettings</item>
-	<item>simpleactionbox</item>
-	<item>simpleactions</item>
-	<item>simplerosterstorage</item>
-	<item>unreadmessageskeeper</item>
-	<item>urlpreview</item>
     </array>
     <array name="qt_libs">
         <item>QtCore</item>
