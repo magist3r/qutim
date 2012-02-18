@@ -12,5 +12,6 @@
         <item>QtBearer</item>
         <item>QtDeclarative</item>
 	<item>QtWebKit</item>
+	<item>QtSystemInfo</item>
     </array>
 </resources>

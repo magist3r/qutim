@@ -1,6 +1,6 @@
 /*
  * This file is auto-generated.  DO NOT MODIFY.
- * Original file: /home/magist3r/code/qutim-android/android/src/org/kde/necessitas/ministro/IMinistro.aidl
+ * Original file: /home/magist3r/code/qutim-0.2.80/android/src/org/kde/necessitas/ministro/IMinistro.aidl
  */
 package org.kde.necessitas.ministro;
 public interface IMinistro extends android.os.IInterface

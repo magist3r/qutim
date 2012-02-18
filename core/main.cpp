@@ -43,18 +43,18 @@ Q_IMPORT_PLUGIN(qjpeg)
 Q_IMPORT_PLUGIN(qgif)
 #endif
 
-#ifdef MEEGO_EDITION
-#include <MDeclarativeCache>
+//#ifdef MEEGO_EDITION
+//#include <MDeclarativeCache>
 
-Q_DECL_EXPORT
-#endif
+//Q_DECL_EXPORT
+//#endif
 int main(int argc, char *argv[])
 {
-#ifdef MEEGO_EDITION
-	QScopedPointer<QApplication> app(MDeclarativeCache::qApplication(argc, argv));
-#else
+//#ifdef MEEGO_EDITION
+//	QScopedPointer<QApplication> app(MDeclarativeCache::qApplication(argc, argv));
+//#else
 	QScopedPointer<QApplication> app(new QApplication(argc, argv));
-#endif
+//#endif
 	QTextCodec::setCodecForTr(QTextCodec::codecForName("utf-8"));
 	QTextCodec::setCodecForCStrings(QTextCodec::codecForName("utf-8"));
 
@@ -75,7 +75,7 @@ int main(int argc, char *argv[])
 	qsrand(uint(qrand()));
 	// It looks like Qt doesn't always use srand as backend of qsrand
 	srand(uint(qrand()));
-
+	qApp->setQuitOnLastWindowClosed(false);
 #ifdef Q_WS_MAEMO_5
 	loadingWindow->close();
 #endif

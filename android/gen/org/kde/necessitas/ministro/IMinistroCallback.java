@@ -1,6 +1,6 @@
 /*
  * This file is auto-generated.  DO NOT MODIFY.
- * Original file: /home/magist3r/code/qutim-android/android/src/org/kde/necessitas/ministro/IMinistroCallback.aidl
+ * Original file: /home/magist3r/code/qutim-0.2.80/android/src/org/kde/necessitas/ministro/IMinistroCallback.aidl
  */
 package org.kde.necessitas.ministro;
 public interface IMinistroCallback extends android.os.IInterface
