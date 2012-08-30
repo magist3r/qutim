@@ -1,6 +1,6 @@
 /*
  * This file is auto-generated.  DO NOT MODIFY.
- * Original file: /home/magist3r/code/qutim-0.2.80/android/src/org/kde/necessitas/ministro/IMinistro.aidl
+ * Original file: /home/magist3r/code/qutim/android/src/org/kde/necessitas/ministro/IMinistro.aidl
  */
 package org.kde.necessitas.ministro;
 public interface IMinistro extends android.os.IInterface
@@ -88,6 +88,8 @@ return DESCRIPTOR;
 *                   "qt.provider"              String           Qt libs provider, currently only "necessitas" is supported.
 *                   "minimum.ministro.api"     Integer          Minimum Ministro API level, used to check if Ministro service compatible with your application. Current API Level is 1 !
 *                   "minimum.qt.version"       Integer          Minimim Qt version (e.g. 0x040800, which means Qt 4.8.0, check http://doc.trolltech.com/4.8/qtglobal.html#QT_VERSION)!
+*                   "3rd.party.repositories"   StringArray      3rd party repositories, which should be downloaded by ministro, needs minimum.ministro.api >= 2
+*                   Check http://community.kde.org/Necessitas/Ministro for more details.
 */
 public void requestLoader(org.kde.necessitas.ministro.IMinistroCallback callback, android.os.Bundle parameters) throws android.os.RemoteException
 {
@@ -126,6 +128,8 @@ static final int TRANSACTION_requestLoader = (android.os.IBinder.FIRST_CALL_TRAN
 *                   "qt.provider"              String           Qt libs provider, currently only "necessitas" is supported.
 *                   "minimum.ministro.api"     Integer          Minimum Ministro API level, used to check if Ministro service compatible with your application. Current API Level is 1 !
 *                   "minimum.qt.version"       Integer          Minimim Qt version (e.g. 0x040800, which means Qt 4.8.0, check http://doc.trolltech.com/4.8/qtglobal.html#QT_VERSION)!
+*                   "3rd.party.repositories"   StringArray      3rd party repositories, which should be downloaded by ministro, needs minimum.ministro.api >= 2
+*                   Check http://community.kde.org/Necessitas/Ministro for more details.
 */
 public void requestLoader(org.kde.necessitas.ministro.IMinistroCallback callback, android.os.Bundle parameters) throws android.os.RemoteException;
 }

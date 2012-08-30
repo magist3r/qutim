@@ -1,9 +1,10 @@
 CODEDIR=/home/magist3r/code
 
 cmake $CODEDIR/qutim \
--DANDROID_NDK=$CODEDIR/necessitas/android-ndk-r8b/ \
+-DANDROID_NDK=$CODEDIR/necessitas/android-ndk \
+-DANDROID_TOOLCHAIN_NAME=arm-linux-androideabi-4.6 \
 -DCMAKE_TOOLCHAIN_FILE=$CODEDIR/android-cmake/toolchain/android.toolchain.cmake \
--DCMAKE_VERBOSE_MAKEFILE=0 \
+-DCMAKE_VERBOSE_MAKEFILE=1 \
 -DANDROID_NATIVE_API_LEVEL=android-14 \
 -DANDROID_FORCE_ARM_BUILD=0 \
 -DCMAKE_BUILD_TYPE=Debug \
@@ -50,7 +51,6 @@ cmake $CODEDIR/qutim \
 -DQT_QTXMLPATTERNS_LIBRARY_DEBUG=$CODEDIR/qt-android/lib/libQtXmlPatterns.so \
 -DQT_QTXMLPATTERNS_LIBRARY_RELEASE=$CODEDIR/qt-android/lib/libQtXmlPatterns.so \
 -DDECLARATIVE_UI=1 \
--DQUTIM_BASE_LIBRARY_TYPE=STATIC \
 -DDBUSAPI=off \
 -DADDCONTACTDLG=off \
 -DADIUMCHAT=off \
@@ -91,7 +91,7 @@ cmake $CODEDIR/qutim \
 -DPLISTCONFIG=off \
 -DPLUGMAN=off \
 -DQMLCHAT=off \
--DQRCICONS=1 \
+-DQRCICONS=0 \
 -DQSOUNDBACKEND=off \
 -DQUETZAL=off \
 -DSCRIPTAPI=off \
@@ -127,7 +127,7 @@ cmake $CODEDIR/qutim \
 -DCLCONF=off \
 -DMASSMESSAGING=off \
 -DMEEGOINTEGRATION=off \
--DANDROIDINTEGRATION=on \
+-DANDROIDINTEGRATION=0 \
 \
 -DQUETZAL=off \
 -DASTRAL=off \
@@ -142,11 +142,17 @@ cmake $CODEDIR/qutim \
 -DJABBER=off \
 -DMULTIMEDIABACKEND=off \
 -DEMOEDIT=off \
--DANTISPAM=off
+-DANTISPAM=off \
+-DOSCAR_USE_3RDPARTY_HMAC=1 \
+-DDOCKTILE=0 \
+-DOFFTHERECORD=0 \
+-DQT_LCONVERT_EXECUTABLE="/usr/bin/lconvert" \
+
 #-DQUTIM_BINARY_DIR=/home/kkszysiu/code/android/fun/qutim_mw/ \
 #-DQUTIM_PATH=/home/kkszysiu/Dokumenty/android/lib/libqutim.so \
 #-DQUTIM_LIBRARY=/home/kkszysiu/Dokumenty/android/lib/
 
+#-DQUTIM_BASE_LIBRARY_TYPE=STATIC \
 #-DCMAKE_VERBOSE_MAKEFILE=TRUE \
 #-DANDROID=TRUE \
 #-D__ANDROID__=TRUE \

@@ -5,7 +5,7 @@
  * should not be modified by hand.
  */
 
-package org.kde.necessitas.example.qutim;
+package org.qutim;
 
 public final class R {
     public static final class array {

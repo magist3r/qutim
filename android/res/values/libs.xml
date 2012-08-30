@@ -2,6 +2,50 @@
 <resources>
     <array name="bundled_libs">
 	<item>qutimcore</item>
+	<item>qutim-adiumwebview</item>
+	<item>qutim-simplecontactlist</item>
+<item>password</item>
+<item>mobilecontactinfo</item>
+<item>authdialog</item>
+<item>mobilesettingsdialog</item>
+<item>comparators</item>
+<item>torycontactlistwidget</item>
+<item>simpleactions</item>
+<item>adiumsrvicons</item>
+<item>simpleactionbox</item>
+<item>simplecontactdelegate</item>
+<item>formula</item>
+<item>qutim-simplecontactlist</item>
+<item>treecontactsmodel</item>
+<item>qutim-adiumwebview</item>
+<item>accountcreator</item>
+<item>oscaridentify</item>
+<item>plaincontactsmodel</item>
+<item>simplerosterstorage</item>
+<item>mrim</item>
+<item>notificationfilter</item>
+<item>nongroupcontactsmodel</item>
+<item>proxysettings</item>
+<item>highlighter</item>
+<item>sessionhelper</item>
+<item>linuxintegration</item>
+<item>simplecontactlist</item>
+<item>nocryptoservice</item>
+<item>urlpreview</item>
+<item>oscarxstatus</item>
+<item>simplecontactlistwidget</item>
+<item>mobilenotificationssettings</item>
+<item>shortcutsettings</item>
+<item>chatnotificationsbackend</item>
+<item>oscar</item>
+<item>bearermanager</item>
+<item>localization</item>
+<item>kopeteemoticonsbackend</item>
+<item>birthdayreminder</item>
+<item>separatedcontactsmodel</item>
+<item>updater</item>
+<item>blogimprover</item>
+<item>unreadmessageskeeper</item>
     </array>
     <array name="qt_libs">
         <item>QtCore</item>

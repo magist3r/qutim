@@ -77,9 +77,10 @@ import dalvik.system.DexClassLoader;
 public class QtActivity extends Activity
 {
     private final static int MINISTRO_INSTALL_REQUEST_CODE = 0xf3ee; // request code used to know when Ministro instalation is finished
-    private static final int MINISTRO_API_LEVEL=1; // Ministro api level (check IMinistro.aidl file)
+    private static final int MINISTRO_API_LEVEL=2; // Ministro api level (check IMinistro.aidl file)
+    private static final int NECESSITAS_API_LEVEL=2; // Necessitas api level used by platform plugin
     private static final String QT_PROVIDER="necessitas";
-    private static final int QT_VERSION=0x040800; // Qt version 4.8.00 check http://doc.trolltech.com/4.8/qtglobal.html#QT_VERSION
+    private static final int QT_VERSION=0x040801; // Qt version 4.8.00 check http://qt-project.org/doc/qt-4.8/qtglobal.html#QT_VERSION
 
     private static final String ERROR_CODE_KEY="error.code";
     private static final String ERROR_MESSAGE_KEY="error.message";
@@ -90,6 +91,8 @@ public class QtActivity extends Activity
     private static final String ENVIRONMENT_VARIABLES_KEY="environment.variables";
     private static final String APPLICATION_PARAMETERS_KEY="application.parameters";
     private static final String BUNDLED_LIBRARIES_KEY="bundled.libraries";
+    private static final String MAIN_LIBRARY_KEY="main.library";
+    private static final String NECESSITAS_API_LEVEL_KEY="necessitas.api.level";
 
     /// Ministro server parameter keys
     private static final String REQUIRED_MODULES_KEY="required.modules";
@@ -97,8 +100,25 @@ public class QtActivity extends Activity
     private static final String QT_PROVIDER_KEY="qt.provider";
     private static final String MINIMUM_MINISTRO_API_KEY="minimum.ministro.api";
     private static final String MINIMUM_QT_VERSION_KEY="minimum.qt.version";
-    /// Ministro server parameter keys
+//    private static final String REPOSITORIES="3rd.party.repositories"; // needs MINISTRO_API_LEVEL >=2 !!!
+                                                                       // Use this key to specify any 3rd party repositories urls
+                                                                       // Ministro will download these repositories into thier
+                                                                       // own folders, check http://community.kde.org/Necessitas/Ministro
+                                                                       // for more details.
 
+    private static final String APPLICATION_PARAMETERS=null; // use this variable to pass any parameters to your application,
+                                                             // the parameters must not contain any white spaces
+                                                             // and must be separated with "\t"
+                                                             // e.g "-param1\t-param2=value2\t-param3\tvalue3"
+
+    private static final String ENVIRONMENT_VARIABLES="QT_USE_ANDROID_NATIVE_STYLE=1\t";
+                                                             // use this variable to add any environment variables to your application.
+                                                             // the env vars must be separated with "\t"
+                                                             // e.g. "ENV_VAR1=1\tENV_VAR2=2\t"
+                                                             // Currently the following vars are used by the android plugin:
+                                                             // * QT_USE_ANDROID_NATIVE_STYLE - 0 if you don't want to use android style plugin, it will save a few ms at startup.
+
+    private static final int INCOMPATIBLE_MINISTRO_VERSION=1; // Incompatible Ministro version. Ministro needs to be upgraded.
     private ActivityInfo m_activityInfo = null; // activity info object, used to access the libs and the strings
     private DexClassLoader m_classLoader = null; // loader object
     private String[] m_qtLibs = null; // required qt libs
@@ -108,8 +128,16 @@ public class QtActivity extends Activity
     {
         try
         {
-            if (loaderParams.getInt(ERROR_CODE_KEY) != 0)
-            { // fatal error, show the error and quit
+            final int errorCode = loaderParams.getInt(ERROR_CODE_KEY);
+            if (errorCode != 0)
+            {
+                if (errorCode == INCOMPATIBLE_MINISTRO_VERSION)
+                {
+                    downloadUpgradeMinistro(loaderParams.getString(ERROR_MESSAGE_KEY));
+                    return;
+                }
+
+                // fatal error, show the error and quit
                 AlertDialog errorDialog = new AlertDialog.Builder(QtActivity.this).create();
                 errorDialog.setMessage(loaderParams.getString(ERROR_MESSAGE_KEY));
                 errorDialog.setButton(getResources().getString(android.R.string.ok), new DialogInterface.OnClickListener() {
@@ -122,14 +150,19 @@ public class QtActivity extends Activity
                 return;
             }
 
-            // add all bundled libs to loader params
+            // add all bundled Qt libs to loader params
             ArrayList<String> libs = new ArrayList<String>();
             if ( m_activityInfo.metaData.containsKey("android.app.bundled_libs_resource_id") )
                 libs.addAll(Arrays.asList(getResources().getStringArray(m_activityInfo.metaData.getInt("android.app.bundled_libs_resource_id"))));
 
-            if ( m_activityInfo.metaData.containsKey("android.app.lib_name") )
-                libs.add(m_activityInfo.metaData.getString("android.app.lib_name"));
+            String libName = null;
+            if ( m_activityInfo.metaData.containsKey("android.app.lib_name") ) {
+                libName = m_activityInfo.metaData.getString("android.app.lib_name");
+                loaderParams.putString(MAIN_LIBRARY_KEY, libName); //main library contains main() function
+            }
+
             loaderParams.putStringArrayList(BUNDLED_LIBRARIES_KEY, libs);
+            loaderParams.putInt(NECESSITAS_API_LEVEL_KEY, NECESSITAS_API_LEVEL);
 
             // load and start QtLoader class
             m_classLoader = new DexClassLoader(loaderParams.getString(DEX_PATH_KEY) // .jar/.apk files
@@ -145,6 +178,10 @@ public class QtActivity extends Activity
                 throw new Exception("");
 
             QtApplication.setQtActivityDelegate(qtLoader);
+
+            // now load the application library so it's accessible from this class loader
+            if (libName != null)
+                System.loadLibrary(libName);
 
             Method startAppMethod=qtLoader.getClass().getMethod("startApplication");
             if (!(Boolean)startAppMethod.invoke(qtLoader))
@@ -182,6 +219,10 @@ public class QtActivity extends Activity
                     parameters.putInt(MINIMUM_MINISTRO_API_KEY, MINISTRO_API_LEVEL);
                     parameters.putString(QT_PROVIDER_KEY, QT_PROVIDER);
                     parameters.putInt(MINIMUM_QT_VERSION_KEY, QT_VERSION);
+                    parameters.putString(ENVIRONMENT_VARIABLES_KEY, ENVIRONMENT_VARIABLES);
+                    if (null!=APPLICATION_PARAMETERS)
+                        parameters.putString(APPLICATION_PARAMETERS_KEY, APPLICATION_PARAMETERS);
+                    // parameters.putStringArray(REPOSITORIES, null);
                     m_service.requestLoader(m_ministroCallback, parameters);
                 }
             } catch (RemoteException e) {
@@ -210,6 +251,35 @@ public class QtActivity extends Activity
             m_service = null;
         }
     };
+
+    private void downloadUpgradeMinistro(String msg)
+    {
+        AlertDialog.Builder downloadDialog = new AlertDialog.Builder(this);
+        downloadDialog.setMessage(msg);
+        downloadDialog.setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                try
+                {
+                    Uri uri = Uri.parse("market://search?q=pname:org.kde.necessitas.ministro");
+                    Intent intent = new Intent(Intent.ACTION_VIEW, uri);
+                    startActivityForResult(intent, MINISTRO_INSTALL_REQUEST_CODE);
+                }
+                catch (Exception e) {
+                    e.printStackTrace();
+                    ministroNotFound();
+                }
+            }
+        });
+
+        downloadDialog.setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                QtActivity.this.finish();
+            }
+        });
+        downloadDialog.show();
+    }
 
     private void ministroNotFound()
     {
@@ -283,7 +353,7 @@ public class QtActivity extends Activity
                                                             ?getIntent().getExtras().getString("loader_class_name")
                                                             :"org.kde.necessitas.industrius.QtActivityDelegate");
                 loaderParams.putStringArrayList(NATIVE_LIBRARIES_KEY, libraryList);
-                loaderParams.putString(ENVIRONMENT_VARIABLES_KEY,"QML_IMPORT_PATH=/data/local/qt/imports\tQT_PLUGIN_PATH=/data/local/qt/plugins");
+                loaderParams.putString(ENVIRONMENT_VARIABLES_KEY,"QML_IMPORT_PATH="+localPrefix+"/imports\tQT_PLUGIN_PATH="+localPrefix+"/plugins");
                 loaderParams.putString(APPLICATION_PARAMETERS_KEY,"-platform\tandroid");
                 loadApplication(loaderParams);
                 return;
@@ -295,32 +365,10 @@ public class QtActivity extends Activity
             } catch (Exception e) {
                 if (firstStart)
                 {
-                    AlertDialog.Builder downloadDialog = new AlertDialog.Builder(this);
+                    String msg="This application requires Ministro service. Would you like to install it?";
                     if (m_activityInfo != null && m_activityInfo.metaData.containsKey("android.app.ministro_needed_msg"))
-                        downloadDialog.setMessage(m_activityInfo.metaData.getString("android.app.ministro_needed_msg"));
-                    downloadDialog.setPositiveButton(android.R.string.yes, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialogInterface, int i) {
-                            try
-                            {
-                                Uri uri = Uri.parse("market://search?q=pname:org.kde.necessitas.ministro");
-                                Intent intent = new Intent(Intent.ACTION_VIEW, uri);
-                                startActivityForResult(intent, MINISTRO_INSTALL_REQUEST_CODE);
-                            }
-                            catch (Exception e) {
-                                e.printStackTrace();
-                                ministroNotFound();
-                            }
-                        }
-                    });
-
-                    downloadDialog.setNegativeButton(android.R.string.no, new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialogInterface, int i) {
-                            QtActivity.this.finish();
-                        }
-                    });
-                    downloadDialog.show();
+                        msg=m_activityInfo.metaData.getString("android.app.ministro_needed_msg");
+                    downloadUpgradeMinistro(msg);
                 }
                 else
                 {
@@ -419,7 +467,7 @@ public class QtActivity extends Activity
     @Override
     protected void onApplyThemeResource(Theme theme, int resid, boolean first)
     {
-        if (!QtApplication.invokeDelegate(null, theme, resid, first))
+        if (!QtApplication.invokeDelegate(theme, resid, first).invoked)
             super.onApplyThemeResource(theme, resid, first);
     }
     public void super_onApplyThemeResource(Theme theme, int resid, boolean first)
@@ -432,7 +480,7 @@ public class QtActivity extends Activity
     @Override
     protected void onChildTitleChanged(Activity childActivity, CharSequence title)
     {
-        if (!QtApplication.invokeDelegate(null, childActivity, title))
+        if (!QtApplication.invokeDelegate(childActivity, title).invoked)
             super.onChildTitleChanged(childActivity, title);
     }
     public void super_onChildTitleChanged(Activity childActivity, CharSequence title)
@@ -444,7 +492,7 @@ public class QtActivity extends Activity
     @Override
     public void onConfigurationChanged(Configuration newConfig)
     {
-        if (!QtApplication.invokeDelegate(null, newConfig))
+        if (!QtApplication.invokeDelegate(newConfig).invoked)
             super.onConfigurationChanged(newConfig);
     }
     public void super_onConfigurationChanged(Configuration newConfig)
@@ -456,7 +504,7 @@ public class QtActivity extends Activity
     @Override
     public void onContentChanged()
     {
-        if (!QtApplication.invokeDelegate(null))
+        if (!QtApplication.invokeDelegate().invoked)
             super.onContentChanged();
     }
     public void super_onContentChanged()
@@ -468,9 +516,9 @@ public class QtActivity extends Activity
     @Override
     public boolean onContextItemSelected(MenuItem item)
     {
-        Boolean res = new Boolean(true);
-        if (QtApplication.invokeDelegate(res, item))
-            return res;
+        QtApplication.InvokeResult res = QtApplication.invokeDelegate(item);
+        if (res.invoked)
+            return (Boolean)res.methodReturns;
         else
             return super.onContextItemSelected(item);
     }
@@ -483,7 +531,7 @@ public class QtActivity extends Activity
     @Override
     public void onContextMenuClosed(Menu menu)
     {
-        if (!QtApplication.invokeDelegate(null, menu))
+        if (!QtApplication.invokeDelegate(menu).invoked)
             super.onContextMenuClosed(menu);
     }
     public void super_onContextMenuClosed(Menu menu)
@@ -522,7 +570,7 @@ public class QtActivity extends Activity
     @Override
     public void onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo)
     {
-        if (!QtApplication.invokeDelegate(null, menu, v, menuInfo))
+        if (!QtApplication.invokeDelegate(menu, v, menuInfo).invoked)
             super.onCreateContextMenu(menu, v, menuInfo);
     }
     public void super_onCreateContextMenu(ContextMenu menu, View v, ContextMenuInfo menuInfo)
@@ -534,9 +582,9 @@ public class QtActivity extends Activity
     @Override
     public CharSequence onCreateDescription()
     {
-        CharSequence ret = null;
-        if (QtApplication.invokeDelegate(ret))
-            return ret;
+        QtApplication.InvokeResult res = QtApplication.invokeDelegate();
+        if (res.invoked)
+            return (CharSequence)res.methodReturns;
         else
             return super.onCreateDescription();
     }
@@ -549,9 +597,9 @@ public class QtActivity extends Activity
     @Override
     protected Dialog onCreateDialog(int id)
     {
-        Dialog ret = null;
-        if (QtApplication.invokeDelegate(ret, id))
-            return ret;
+        QtApplication.InvokeResult res = QtApplication.invokeDelegate(id);
+        if (res.invoked)
+            return (Dialog)res.methodReturns;
         else
             return super.onCreateDialog(id);
     }
@@ -564,9 +612,9 @@ public class QtActivity extends Activity
     @Override
     public boolean onCreateOptionsMenu(Menu menu)
     {
-        Boolean ret = new Boolean(false);
-        if (QtApplication.invokeDelegate(ret, menu))
-            return ret;
+        QtApplication.InvokeResult res = QtApplication.invokeDelegate(menu);
+        if (res.invoked)
+            return (Boolean)res.methodReturns;
         else
             return super.onCreateOptionsMenu(menu);
     }
@@ -579,9 +627,9 @@ public class QtActivity extends Activity
     @Override
     public boolean onCreatePanelMenu(int featureId, Menu menu)
     {
-        Boolean ret = new Boolean(false);
-        if (QtApplication.invokeDelegate(ret, featureId, menu))
-            return ret;
+        QtApplication.InvokeResult res = QtApplication.invokeDelegate(featureId, menu);
+        if (res.invoked)
+            return (Boolean)res.methodReturns;
         else
             return super.onCreatePanelMenu(featureId, menu);
     }
@@ -595,9 +643,9 @@ public class QtActivity extends Activity
     @Override
     public View onCreatePanelView(int featureId)
     {
-        View ret = null;
-        if (QtApplication.invokeDelegate(ret, featureId))
-            return ret;
+        QtApplication.InvokeResult res = QtApplication.invokeDelegate(featureId);
+        if (res.invoked)
+            return (View)res.methodReturns;
         else
             return super.onCreatePanelView(featureId);
     }
@@ -610,9 +658,9 @@ public class QtActivity extends Activity
     @Override
     public boolean onCreateThumbnail(Bitmap outBitmap, Canvas canvas)
     {
-        Boolean ret = new Boolean(false);
-        if (QtApplication.invokeDelegate(ret, outBitmap, canvas))
-            return ret;
+        QtApplication.InvokeResult res = QtApplication.invokeDelegate(outBitmap, canvas);
+        if (res.invoked)
+            return (Boolean)res.methodReturns;
         else
             return super.onCreateThumbnail(outBitmap, canvas);
     }
@@ -625,9 +673,9 @@ public class QtActivity extends Activity
     @Override
     public View onCreateView(String name, Context context, AttributeSet attrs)
     {
-        View ret = null;
-        if (QtApplication.invokeDelegate(ret, name, context, attrs))
-            return ret;
+        QtApplication.InvokeResult res = QtApplication.invokeDelegate(name, context, attrs);
+        if (res.invoked)
+            return (View)res.methodReturns;
         else
             return super.onCreateView(name, context, attrs);
     }
@@ -641,7 +689,7 @@ public class QtActivity extends Activity
     protected void onDestroy()
     {
         super.onDestroy();
-        QtApplication.invokeDelegate(null);
+        QtApplication.invokeDelegate();
     }
     //---------------------------------------------------------------------------
 
@@ -692,7 +740,7 @@ public class QtActivity extends Activity
     @Override
     public void onLowMemory()
     {
-        if (!QtApplication.invokeDelegate(null))
+        if (!QtApplication.invokeDelegate().invoked)
             super.onLowMemory();
     }
     //---------------------------------------------------------------------------
@@ -700,9 +748,9 @@ public class QtActivity extends Activity
     @Override
     public boolean onMenuItemSelected(int featureId, MenuItem item)
     {
-        Boolean ret = new Boolean(false);
-        if (QtApplication.invokeDelegate(ret,featureId, item))
-            return ret;
+        QtApplication.InvokeResult res = QtApplication.invokeDelegate(featureId, item);
+        if (res.invoked)
+            return (Boolean)res.methodReturns;
         else
             return super.onMenuItemSelected(featureId, item);
     }
@@ -715,9 +763,9 @@ public class QtActivity extends Activity
     @Override
     public boolean onMenuOpened(int featureId, Menu menu)
     {
-        Boolean ret = new Boolean(false);
-        if (QtApplication.invokeDelegate(ret,featureId, menu))
-            return ret;
+        QtApplication.InvokeResult res = QtApplication.invokeDelegate(featureId, menu);
+        if (res.invoked)
+            return (Boolean)res.methodReturns;
         else
             return super.onMenuOpened(featureId, menu);
     }
@@ -730,7 +778,7 @@ public class QtActivity extends Activity
     @Override
     protected void onNewIntent(Intent intent)
     {
-        if (!QtApplication.invokeDelegate(null, intent))
+        if (!QtApplication.invokeDelegate(intent).invoked)
             super.onNewIntent(intent);
     }
     public void super_onNewIntent(Intent intent)
@@ -742,9 +790,9 @@ public class QtActivity extends Activity
     @Override
     public boolean onOptionsItemSelected(MenuItem item)
     {
-        Boolean ret = new Boolean(false);
-        if (QtApplication.invokeDelegate(ret, item))
-            return ret;
+        QtApplication.InvokeResult res = QtApplication.invokeDelegate(item);
+        if (res.invoked)
+            return (Boolean)res.methodReturns;
         else
             return super.onOptionsItemSelected(item);
     }
@@ -757,7 +805,7 @@ public class QtActivity extends Activity
     @Override
     public void onOptionsMenuClosed(Menu menu)
     {
-        if (!QtApplication.invokeDelegate(null, menu))
+        if (!QtApplication.invokeDelegate(menu).invoked)
             super.onOptionsMenuClosed(menu);
     }
     public void super_onOptionsMenuClosed(Menu menu)
@@ -769,7 +817,7 @@ public class QtActivity extends Activity
     @Override
     public void onPanelClosed(int featureId, Menu menu)
     {
-        if (!QtApplication.invokeDelegate(null, featureId, menu))
+        if (!QtApplication.invokeDelegate(featureId, menu).invoked)
             super.onPanelClosed(featureId, menu);
     }
     public void super_onPanelClosed(int featureId, Menu menu)
@@ -782,7 +830,7 @@ public class QtActivity extends Activity
     protected void onPause()
     {
         super.onPause();
-        QtApplication.invokeDelegate(null);
+        QtApplication.invokeDelegate();
     }
     //---------------------------------------------------------------------------
 
@@ -790,7 +838,7 @@ public class QtActivity extends Activity
     protected void onPostCreate(Bundle savedInstanceState)
     {
         super.onPostCreate(savedInstanceState);
-        QtApplication.invokeDelegate(null, savedInstanceState);
+        QtApplication.invokeDelegate(savedInstanceState);
     }
     //---------------------------------------------------------------------------
 
@@ -798,14 +846,14 @@ public class QtActivity extends Activity
     protected void onPostResume()
     {
         super.onPostResume();
-        QtApplication.invokeDelegate(null);
+        QtApplication.invokeDelegate();
     }
     //---------------------------------------------------------------------------
 
     @Override
     protected void onPrepareDialog(int id, Dialog dialog)
     {
-        if (!QtApplication.invokeDelegate(null, id, dialog))
+        if (!QtApplication.invokeDelegate(id, dialog).invoked)
             super.onPrepareDialog(id, dialog);
     }
     public void super_onPrepareDialog(int id, Dialog dialog)
@@ -817,9 +865,9 @@ public class QtActivity extends Activity
     @Override
     public boolean onPrepareOptionsMenu(Menu menu)
     {
-        Boolean ret = new Boolean(false);
-        if (QtApplication.invokeDelegate(ret, menu))
-            return ret;
+        QtApplication.InvokeResult res = QtApplication.invokeDelegate(menu);
+        if (res.invoked)
+            return (Boolean)res.methodReturns;
         else
             return super.onPrepareOptionsMenu(menu);
     }
@@ -832,9 +880,9 @@ public class QtActivity extends Activity
     @Override
     public boolean onPreparePanel(int featureId, View view, Menu menu)
     {
-        Boolean ret = new Boolean(false);
-        if (QtApplication.invokeDelegate(ret, featureId, view, menu))
-            return ret;
+        QtApplication.InvokeResult res = QtApplication.invokeDelegate(featureId, view, menu);
+        if (res.invoked)
+            return (Boolean)res.methodReturns;
         else
             return super.onPreparePanel(featureId, view, menu);
     }
@@ -848,14 +896,14 @@ public class QtActivity extends Activity
     protected void onRestart()
     {
         super.onRestart();
-        QtApplication.invokeDelegate(null);
+        QtApplication.invokeDelegate();
     }
     //---------------------------------------------------------------------------
 
     @Override
     protected void onRestoreInstanceState(Bundle savedInstanceState)
     {
-        if (!QtApplication.invokeDelegate(null, savedInstanceState))
+        if (!QtApplication.invokeDelegate(savedInstanceState).invoked)
             super.onRestoreInstanceState(savedInstanceState);
     }
     public void super_onRestoreInstanceState(Bundle savedInstanceState)
@@ -868,16 +916,16 @@ public class QtActivity extends Activity
     protected void onResume()
     {
         super.onResume();
-        QtApplication.invokeDelegate(null);
+        QtApplication.invokeDelegate();
     }
     //---------------------------------------------------------------------------
 
     @Override
     public Object onRetainNonConfigurationInstance()
     {
-        Object ret = null;
-        if (QtApplication.invokeDelegate(ret))
-            return ret;
+        QtApplication.InvokeResult res = QtApplication.invokeDelegate();
+        if (res.invoked)
+            return res.methodReturns;
         else
             return super.onRetainNonConfigurationInstance();
     }
@@ -890,7 +938,7 @@ public class QtActivity extends Activity
     @Override
     protected void onSaveInstanceState(Bundle outState)
     {
-        if (!QtApplication.invokeDelegate(null, outState))
+        if (!QtApplication.invokeDelegate(outState).invoked)
             super.onSaveInstanceState(outState);
     }
     public void super_onSaveInstanceState(Bundle outState)
@@ -903,9 +951,9 @@ public class QtActivity extends Activity
     @Override
     public boolean onSearchRequested()
     {
-        Boolean ret = new Boolean(false);
-        if (QtApplication.invokeDelegate(ret))
-            return ret;
+        QtApplication.InvokeResult res = QtApplication.invokeDelegate();
+        if (res.invoked)
+            return (Boolean)res.methodReturns;
         else
             return super.onSearchRequested();
     }
@@ -919,7 +967,7 @@ public class QtActivity extends Activity
     protected void onStart()
     {
         super.onStart();
-        QtApplication.invokeDelegate(null);
+        QtApplication.invokeDelegate();
     }
     //---------------------------------------------------------------------------
 
@@ -927,14 +975,14 @@ public class QtActivity extends Activity
     protected void onStop()
     {
         super.onStop();
-        QtApplication.invokeDelegate(null);
+        QtApplication.invokeDelegate();
     }
     //---------------------------------------------------------------------------
 
     @Override
     protected void onTitleChanged(CharSequence title, int color)
     {
-        if (!QtApplication.invokeDelegate(null, title, color))
+        if (!QtApplication.invokeDelegate(title, color).invoked)
             super.onTitleChanged(title, color);
     }
     public void super_onTitleChanged(CharSequence title, int color)
@@ -974,7 +1022,7 @@ public class QtActivity extends Activity
     @Override
     public void onUserInteraction()
     {
-        if (!QtApplication.invokeDelegate(null))
+        if (!QtApplication.invokeDelegate().invoked)
             super.onUserInteraction();
     }
     public void super_onUserInteraction()
@@ -986,7 +1034,7 @@ public class QtActivity extends Activity
     @Override
     protected void onUserLeaveHint()
     {
-        if (!QtApplication.invokeDelegate(null))
+        if (!QtApplication.invokeDelegate().invoked)
             super.onUserLeaveHint();
     }
     public void super_onUserLeaveHint()
@@ -998,7 +1046,7 @@ public class QtActivity extends Activity
     @Override
     public void onWindowAttributesChanged(LayoutParams params)
     {
-        if (!QtApplication.invokeDelegate(null, params))
+        if (!QtApplication.invokeDelegate(params).invoked)
             super.onWindowAttributesChanged(params);
     }
     public void super_onWindowAttributesChanged(LayoutParams params)
@@ -1010,7 +1058,7 @@ public class QtActivity extends Activity
     @Override
     public void onWindowFocusChanged(boolean hasFocus)
     {
-        if (!QtApplication.invokeDelegate(null, hasFocus))
+        if (!QtApplication.invokeDelegate(hasFocus).invoked)
             super.onWindowFocusChanged(hasFocus);
     }
     public void super_onWindowFocusChanged(boolean hasFocus)
@@ -1024,7 +1072,7 @@ public class QtActivity extends Activity
     @Override
     public void onAttachedToWindow()
     {
-        if (!QtApplication.invokeDelegate(null))
+        if (!QtApplication.invokeDelegate().invoked)
             super.onAttachedToWindow();
     }
     public void super_onAttachedToWindow()
@@ -1036,7 +1084,7 @@ public class QtActivity extends Activity
     @Override
     public void onBackPressed()
     {
-        if (!QtApplication.invokeDelegate(null))
+        if (!QtApplication.invokeDelegate().invoked)
             super.onBackPressed();
     }
     public void super_onBackPressed()
@@ -1048,7 +1096,7 @@ public class QtActivity extends Activity
     @Override
     public void onDetachedFromWindow()
     {
-        if (!QtApplication.invokeDelegate(null))
+        if (!QtApplication.invokeDelegate().invoked)
             super.onDetachedFromWindow();
     }
     public void super_onDetachedFromWindow()
@@ -1077,9 +1125,9 @@ public class QtActivity extends Activity
 @Override
     protected Dialog onCreateDialog(int id, Bundle args)
     {
-        Dialog ret = null;
-        if (QtApplication.invokeDelegate(ret, id, args))
-            return ret;
+        QtApplication.InvokeResult res = QtApplication.invokeDelegate(id, args);
+        if (res.invoked)
+            return (Dialog)res.methodReturns;
         else
             return super.onCreateDialog(id, args);
     }
@@ -1092,7 +1140,7 @@ public class QtActivity extends Activity
     @Override
     protected void onPrepareDialog(int id, Dialog dialog, Bundle args)
     {
-        if (!QtApplication.invokeDelegate(null, id, dialog, args))
+        if (!QtApplication.invokeDelegate(id, dialog, args).invoked)
             super.onPrepareDialog(id, dialog, args);
     }
     public void super_onPrepareDialog(int id, Dialog dialog, Bundle args)
@@ -1121,7 +1169,7 @@ public class QtActivity extends Activity
 //QtCreator     @Override
 //QtCreator     public void onActionModeFinished(ActionMode mode)
 //QtCreator     {
-//QtCreator         if (!QtApplication.invokeDelegate(null, mode))
+//QtCreator         if (!QtApplication.invokeDelegate(mode).invoked)
 //QtCreator             super.onActionModeFinished(mode);
 //QtCreator     }
 //QtCreator     public void super_onActionModeFinished(ActionMode mode)
@@ -1133,7 +1181,7 @@ public class QtActivity extends Activity
 //QtCreator     @Override
 //QtCreator     public void onActionModeStarted(ActionMode mode)
 //QtCreator     {
-//QtCreator         if (!QtApplication.invokeDelegate(null, mode))
+//QtCreator         if (!QtApplication.invokeDelegate(mode).invoked)
 //QtCreator             super.onActionModeStarted(mode);
 //QtCreator     }
 //QtCreator     public void super_onActionModeStarted(ActionMode mode)
@@ -1145,7 +1193,7 @@ public class QtActivity extends Activity
 //QtCreator     @Override
 //QtCreator     public void onAttachFragment(Fragment fragment)
 //QtCreator     {
-//QtCreator         if (!QtApplication.invokeDelegate(null, fragment))
+//QtCreator         if (!QtApplication.invokeDelegate(fragment).invoked)
 //QtCreator             super.onAttachFragment(fragment);
 //QtCreator     }
 //QtCreator     public void super_onAttachFragment(Fragment fragment)
@@ -1157,9 +1205,9 @@ public class QtActivity extends Activity
 //QtCreator     @Override
 //QtCreator     public View onCreateView(View parent, String name, Context context, AttributeSet attrs)
 //QtCreator     {
-//QtCreator         View ret = null;
-//QtCreator         if (QtApplication.invokeDelegate(ret, parent, name, context, attrs))
-//QtCreator             return ret;
+//QtCreator         QtApplication.InvokeResult res = QtApplication.invokeDelegate(parent, name, context, attrs);
+//QtCreator         if (res.invoked)
+//QtCreator             return (View)res.methodReturns;
 //QtCreator         else
 //QtCreator             return super.onCreateView(parent, name, context, attrs);
 //QtCreator     }
@@ -1186,9 +1234,9 @@ public class QtActivity extends Activity
 //QtCreator     @Override
 //QtCreator     public ActionMode onWindowStartingActionMode(Callback callback)
 //QtCreator     {
-//QtCreator         ActionMode ret = null;
-//QtCreator         if (QtApplication.invokeDelegate(ret, callback))
-//QtCreator             return ret;
+//QtCreator         QtApplication.InvokeResult res = QtApplication.invokeDelegate(callback);
+//QtCreator         if (res.invoked)
+//QtCreator             return (ActionMode)res.methodReturns;
 //QtCreator         else
 //QtCreator             return super.onWindowStartingActionMode(callback);
 //QtCreator     }

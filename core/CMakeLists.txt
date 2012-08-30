@@ -219,11 +219,11 @@ IF(ANDROID)
         ${UIS_H}
         ${RCC}
         ${QUTIM_ADDITIONAL_SOURCES}
-	/home/magist3r/code/qt-android/src/android/cpp/qtmain_android.cpp
+#	/home/magist3r/code/qt-android/src/android/cpp/qtmain_android.cpp
     )
     set_target_properties(libqutim PROPERTIES OUTPUT_NAME libqutimcore)
-    set(QUTIM_COMPILE_FLAGS "${QUTIM_COMPILE_FLAGS} -std=c++0x -std=gnu++0x")
-    set(LIBQUTIM_COMPILE_FLAGS "${LIBQUTIM_COMPILE_FLAGS} -std=c++0x -std=gnu++0x")
+    set(QUTIM_COMPILE_FLAGS "${QUTIM_COMPILE_FLAGS} -std=gnu++11")
+    set(LIBQUTIM_COMPILE_FLAGS "${LIBQUTIM_COMPILE_FLAGS} -std=gnu++11")
 ELSE()
   QUTIM_ADD_EXECUTABLE (qutim
 	WIN32 MACOSX_BUNDLE
