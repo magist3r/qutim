@@ -113,7 +113,8 @@ ProfileCreationWizard::ProfileCreationWizard(ModuleManager *parent,
 			struct passwd *userInfo = getpwuid(getuid());
 			QTextCodec *codec = QTextCodec::codecForLocale();
 			realId = codec->toUnicode(userInfo->pw_name);
-			realName = codec->toUnicode(userInfo->pw_gecos).section(',', 0, 0);
+			realName = codec->toUnicode(userInfo->pw_name);
+//			realName = codec->toUnicode(userInfo->pw_gecos).section(',', 0, 0);
 		} QT_CATCH(...) {
 		}
 #elif defined(Q_OS_WIN32)

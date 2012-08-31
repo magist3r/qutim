@@ -50,7 +50,7 @@ cmake $CODEDIR/qutim \
 -DQT_QTXMLPATTERNS_LIBRARY=$CODEDIR/qt-android/lib/libQtXmlPatterns.so \
 -DQT_QTXMLPATTERNS_LIBRARY_DEBUG=$CODEDIR/qt-android/lib/libQtXmlPatterns.so \
 -DQT_QTXMLPATTERNS_LIBRARY_RELEASE=$CODEDIR/qt-android/lib/libQtXmlPatterns.so \
--DDECLARATIVE_UI=1 \
+-DDECLARATIVE_UI=0 \
 -DDBUSAPI=off \
 -DADDCONTACTDLG=off \
 -DADIUMCHAT=off \
@@ -147,12 +147,13 @@ cmake $CODEDIR/qutim \
 -DDOCKTILE=0 \
 -DOFFTHERECORD=0 \
 -DQT_LCONVERT_EXECUTABLE="/usr/bin/lconvert" \
+-DQUTIM_BASE_LIBRARY_TYPE=STATIC \
+-DQUTIM_ENABLE_ALL_PLUGINS=0 \
 
 #-DQUTIM_BINARY_DIR=/home/kkszysiu/code/android/fun/qutim_mw/ \
 #-DQUTIM_PATH=/home/kkszysiu/Dokumenty/android/lib/libqutim.so \
 #-DQUTIM_LIBRARY=/home/kkszysiu/Dokumenty/android/lib/
 
-#-DQUTIM_BASE_LIBRARY_TYPE=STATIC \
 #-DCMAKE_VERBOSE_MAKEFILE=TRUE \
 #-DANDROID=TRUE \
 #-D__ANDROID__=TRUE \
