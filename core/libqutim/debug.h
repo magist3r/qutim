@@ -65,8 +65,8 @@ namespace qutim_sdk_0_3
 	{ return debug_helper(qutim_plugin_id(), level, QtCriticalMsg); }
 	inline QDebug fatal(DebugLevel level = DebugInfo)
 	{ return debug_helper(qutim_plugin_id(), level, QtFatalMsg); }
-# undef QUTIM_DEBUG_ID_CONVERT_HELPER
-# undef QUTIM_DEBUG_ID_CONVERT
+//# undef QUTIM_DEBUG_ID_CONVERT_HELPER
+//# undef QUTIM_DEBUG_ID_CONVERT
 #endif
 }
 #endif // DEBUG_H
