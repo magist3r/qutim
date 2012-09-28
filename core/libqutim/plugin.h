@@ -195,17 +195,16 @@ Q_DECLARE_OPERATORS_FOR_FLAGS(qutim_sdk_0_3::Plugin::Capabilities)
 # define QUTIM_DEBUG_ID_CONVERT(A) QUTIM_DEBUG_ID_CONVERT_HELPER(A)
 # define QUTIM_PLUGIN_INSTANCE_BODY(IMPLEMENTATION) \
 		{ \
-			static QT_PREPEND_NAMESPACE(QWeakPointer)<QT_PREPEND_NAMESPACE(QObject)> _instance; \
+			static QT_PREPEND_NAMESPACE(QPointer)<QT_PREPEND_NAMESPACE(QObject)> _instance; \
 			if (!_instance) {      \
 				_instance = new IMPLEMENTATION; \
-				quint64 pluginId = QUTIM_DEBUG_ID_CONVERT(QUTIM_PLUGIN_ID); \
-				qutim_sdk_0_3::debugAddPluginId(pluginId, &IMPLEMENTATION::staticMetaObject); \
+				qutim_sdk_0_3::debugAddPluginId(QUTIM_DEBUG_ID_CONVERT(QUTIM_PLUGIN_ID), &IMPLEMENTATION::staticMetaObject); \
 			} \
 			return _instance; \
 		}
 # define QUTIM_EXPORT_PLUGIN_HELPER(PluginInstance, Class) \
-	QT_PREPEND_NAMESPACE(QWeakPointer)<QT_PREPEND_NAMESPACE(QObject)> \
-	PluginInstance() \
+	QT_PREPEND_NAMESPACE(QObject) \
+	*PluginInstance() \
 	QUTIM_PLUGIN_INSTANCE_BODY(Class)
 //# undef QUTIM_DEBUG_ID_CONVERT_HELPER
 //# undef QUTIM_DEBUG_ID_CONVERT
