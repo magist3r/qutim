@@ -44,17 +44,17 @@ Q_IMPORT_PLUGIN(qgif)
 #endif
 
 #ifdef MEEGO_EDITION
-#include <MDeclarativeCache>
+//#include <MDeclarativeCache>
 
 Q_DECL_EXPORT
 #endif
 int main(int argc, char *argv[])
 {
-#ifdef MEEGO_EDITION
-	QScopedPointer<QApplication> app(MDeclarativeCache::qApplication(argc, argv));
-#else
+//#ifdef MEEGO_EDITION
+//	QScopedPointer<QApplication> app(MDeclarativeCache::qApplication(argc, argv));
+//#else
 	QScopedPointer<QApplication> app(new QApplication(argc, argv));
-#endif
+//#endif
 	QTextCodec::setCodecForTr(QTextCodec::codecForName("utf-8"));
 	QTextCodec::setCodecForCStrings(QTextCodec::codecForName("utf-8"));
 
